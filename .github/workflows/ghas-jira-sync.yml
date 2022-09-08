@@ -1,0 +1,34 @@
+name: "Sync GHAS to Jira"
+
+on:
+  workflow_dispatch:
+
+  workflow_run:
+    workflows: [Code scanning]
+    types:
+      - completed
+
+  pull_request:
+
+jobs:
+  ghas_to_jira:
+    name: Push GHAS Results to Jira
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get temporary token for creating deployment
+        id: temp_token
+        uses: peter-murray/workflow-application-token-action@v1.4.0
+        with:
+          application_id: ${{ secrets.MADOCTODEMO_BETTER_CREDENTIALS_APP_ID }}
+          application_private_key: ${{ secrets.MADOCTODEMO_BETTER_CREDENTIALS_PRIVATE_KEY }}
+
+      - name: Sync alerts to Jira issues
+        uses: github/ghas-jira-integration@v1
+        with:
+          jira_url: 'https://madoctodemo.atlassian.net/'
+          jira_user: '${{ secrets.JIRA_USER }}'
+          jira_token: '${{ secrets.JIRA_TOKEN }}'
+          jira_project: 'MAD'
+          jira_labels: 'security'
+          sync_direction: 'gh2jira'
+          github_token: ${{ steps.temp_token.outputs.token }}
